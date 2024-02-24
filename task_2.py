@@ -1,3 +1,6 @@
+"""task_2.py"""
+
+
 import json
 import tkinter as tk
 from tkinter import messagebox
@@ -5,63 +8,72 @@ from tkinter import simpledialog
 import requests
 
 
-class DataFetcher:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.withdraw()
+class Post:
+    """Post class"""
 
-    def fetch_data(self, _id):
-        """ Вытягивает данные из JSONplaceholder
+    def __init__(self, _id):
+        """init method
 
         Args:
-            _id (int): ID
+            _id (int): id
+        """
+        self.id = _id
+        self.data = self.fetch_data()
+        self.filename = f'post_{_id}.json'
+        self.save_to_file()
+
+    def fetch_data(self):
+        """fetch data from JSONplaceholder
 
         Returns:
-            dict or None: Возвращает словарь данных или None, если запрос не удался
+            response(json): response
         """
         response = requests.get(
-            f'https://jsonplaceholder.typicode.com/posts/{_id}', timeout=60)
+            f'https://jsonplaceholder.typicode.com/posts/{self.id}', timeout=60)
         if response.status_code == 200:
             return response.json()
         else:
             return None
 
-    def save_to_file(self, data, filename):
-        """ Сохранение данных в json файл
+    def save_to_file(self):
+        """save to file"""
+        with open(self.filename, 'w', encoding="utf-8") as f:
+            json.dump(self.data, f)
 
-        Args:
-            data (dict): Данные для сохранения
-            filename (str): Имя файла
-        """
-        with open(filename, 'w', encoding="utf-8") as f:
-            json.dump(data, f)
 
-    def get_id_from_user(self):
-        """Запрашивает у пользователя ввод ID"""
-        return simpledialog.askstring("Input", "Введите ID:", parent=self.root)
+class GUI:
+    """GUI class"""
 
-    def show_success_message(self, filename):
-        """Отображает сообщение об успешном сохранении данных"""
-        messagebox.showinfo("Успех", f"Данные сохранены в файл {filename}")
+    def __init__(self):
+        """init method"""
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.messagebox = messagebox
+        self.simpledialog = simpledialog
 
-    def show_error_message(self):
-        """ Отображает сообщение об ошибке """
-        messagebox.showinfo("Ошибка", "Не удалось получить данные")
+    def input(self):
+        """input method"""
+        _id = self.simpledialog.askstring(
+            "Input", "Введите ID:", parent=self.root)
+        return _id
+
+
+class App(GUI):
+    """Класс, представляющий приложение, наследующий от класса GUI"""
 
     def main(self):
-        _id = self.get_id_from_user()
-        data = self.fetch_data(_id)
-
-        if data is not None:
-            filename = f'post_{_id}.json'
-            self.save_to_file(data, filename)
-            self.show_success_message(filename)
+        """main method"""
+        _id = self.input()
+        if _id is not None:
+            post = Post(_id)
+            self.messagebox.showinfo(
+                "Успех", f"Данные сохранены в файл {post.filename}")
         else:
-            self.show_error_message()
-
+            self.messagebox.showinfo(
+                "Ошибка", "Не удалось получить данные")
         self.root.mainloop()
 
 
 if __name__ == "__main__":
-    data_fetcher = DataFetcher()
-    data_fetcher.main()
+    app = App()
+    app.main()
